@@ -1,79 +1,57 @@
-/* General Styles */
 body {
   font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #f4f4f4;
-  color: #333;
-  line-height: 1.6;
+  margin: 2rem;
+  background-color: #f4f4f9;
 }
 
-h1 {
-  text-align: center;
-  margin: 20px 0;
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Input Field and Button */
-#city-input {
+label {
   display: block;
-  margin: 20px auto;
-  padding: 10px;
-  width: 80%;
-  max-width: 400px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
 }
 
-#fetch-weather {
-  display: block;
-  margin: 10px auto;
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: #fff;
+input[type="text"] {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background-color: #0066cc;
+  color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 4rem;
   cursor: pointer;
 }
 
-#fetch-weather:hover {
-  background-color: #0056b3;
+button:hover {
+  background-color: #004999;
 }
 
-/* Weather Display Section */
-#weather-display {
-  margin: 20px auto;
-  padding: 10px;
-  width: 90%;
-  max-width: 600px;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Error Message */
-#error-message {
-  color: red;
+#title {
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
   font-weight: bold;
-  text-align: center;
-  margin-top: 10px;
+  color: #333;
 }
 
-/* Hidden Class for Error Handling */
+#error-message {
+  margin-top: 1rem;
+  color: #d9534f;
+  font-weight: bold;
+}
+
 .hidden {
   display: none;
-}
-
-/* BONUS: Loading Spinner */
-#loading-spinner {
-  display: none;
-  margin: 20px auto;
-  text-align: center;
-}
-
-#loading-spinner img {
-  width: 50px;
-  height: 50px;
 }

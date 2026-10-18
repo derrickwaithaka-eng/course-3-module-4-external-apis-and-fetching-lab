@@ -1,88 +1,148 @@
-// index.js
-const weatherApi = "https://api.weather.gov/alerts/active?area="
 
-// State abbreviation mapping to match full name test requirements
-const stateNames = {
-  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
-  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',
-  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
-  KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland',
-  MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri',
-  MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey',
-  NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio',
-  OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
-  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont',
-  VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming'
-};
+function initializeWeatherAlerts() {
+  const form = document.getElementById('alert-form');
+  const stateInput = document.getElementById('state');
 
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.querySelector('form') || document.getElementById('alert-form');
-  const stateInput = document.getElementById('state') || document.getElementById('state-input');
-  const submitBtn = document.getElementById('get-alerts-btn') || document.getElementById('submit-btn');
-  const titleDiv = document.getElementById('title') || document.getElementById('weather-display');
-  const errorDiv = document.getElementById('error-message');
+  if (!form || !stateInput) return;
 
-  if (submitBtn) {
-    submitBtn.addEventListener('click', handleFetch);
-  } else if (form) {
-    form.addEventListener('submit', handleFetch);
-  }
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
 
-  async function handleFetch(e) {
-    if (e) e.preventDefault();
-    
-    const stateVal = stateInput ? stateInput.value.trim().toUpperCase() : '';
-    
-    // Clear previous errors and results
-    if (errorDiv) {
-      errorDiv.textContent = '';
-      errorDiv.classList.add('hidden');
-      errorDiv.style.display = 'none';
-    }
-    if (titleDiv) {
-      titleDiv.textContent = '';
-    }
+    const state = stateInput.value.trim().toUpperCase();
 
-    if (!stateVal) {
-      showError('Please enter a valid state abbreviation.');
+    if (!state) {
+      showError({ message: 'Please enter a state abbreviation.' });
       return;
     }
 
-    try {
-      const response = await fetch(`${weatherApi}${stateVal}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch weather alerts. Please check the state abbreviation.');
-      }
+    fetchWeatherAlerts(state);
+  });
+}
 
-      const data = await response.json();
-      const count = data.features ? data.features.length : 0;
-      const stateName = stateNames[stateVal] || stateVal;
+// Initialize immediately because the script is loaded at the end of body.
+// This also works when Jest loads the module after constructing the HTML.
+initializeWeatherAlerts();
 
-      // Display format required by tests: 'Current watches, warnings, and advisories for [State]: [Count]'
-      if (titleDiv) {
-        titleDiv.textContent = `Current watches, warnings, and advisories for ${stateName}: ${count}`;
-      }
+// Step 1: Fetch Weather Alerts
+function fetchWeatherAlerts(state) {
+  const normalizedState = String(state || '').trim().toUpperCase();
 
-      // Clear input field on submission
-      if (stateInput) {
-        stateInput.value = '';
-      }
-    } catch (err) {
-      showError(err.message);
-    }
+  clearError();
+
+  if (!normalizedState) {
+    showError({ message: 'Please enter a state abbreviation.' });
+    return Promise.resolve();
   }
 
-  function showError(msg) {
-    if (errorDiv) {
-      errorDiv.textContent = msg;
-      errorDiv.classList.remove('hidden');
-      errorDiv.style.display = 'block';
-    }
-  }
-});
+  const url =
+    `https://api.weather.gov/alerts/active?area=${normalizedState}`;
 
-// Export for Jest testing environments
+  return fetch(url)
+    .then(function (response) {
+      if (!response || !response.ok) {
+        throw new Error(
+          `Failed to fetch weather alerts for ${normalizedState}. Status: ${
+            response ? response.status : 'unknown'
+          }`
+        );
+      }
+
+      return response.json();
+    })
+    .then(function (data) {
+      displayAlerts(data, normalizedState);
+      resetInput();
+    })
+    .catch(function (error) {
+      showError(error);
+    });
+}
+
+// Step 2: Display Alerts
+function displayAlerts(data, state) {
+  const displayDiv =
+    document.getElementById('alerts-display') ||
+    document.getElementById('title');
+
+  if (!displayDiv) return;
+
+  displayDiv.innerHTML = '';
+
+  const features =
+    data && Array.isArray(data.features) ? data.features : [];
+
+  const title =
+    data && typeof data.title === 'string' && data.title
+      ? data.title
+      : 'Weather Alerts';
+
+  const heading = document.createElement('h3');
+  heading.textContent = `${title}: ${features.length}`;
+  displayDiv.appendChild(heading);
+
+  if (features.length > 0) {
+    const list = document.createElement('ul');
+
+    features.forEach(function (feature) {
+      const item = document.createElement('li');
+
+      item.textContent =
+        feature &&
+        feature.properties &&
+        typeof feature.properties.headline === 'string'
+          ? feature.properties.headline
+          : '';
+
+      list.appendChild(item);
+    });
+
+    displayDiv.appendChild(list);
+  }
+}
+
+// Step 3: Reset Input
+function resetInput() {
+  const stateInput = document.getElementById('state');
+
+  if (stateInput) {
+    stateInput.value = '';
+  }
+}
+
+// Step 4: Show Error
+function showError(errorObject) {
+  const errorDiv = document.getElementById('error-message');
+
+  if (!errorDiv) return;
+
+  const message =
+    errorObject && errorObject.message
+      ? errorObject.message
+      : String(errorObject || 'An unexpected error occurred.');
+
+  errorDiv.textContent = message;
+  errorDiv.classList.remove('hidden');
+  errorDiv.style.display = 'block';
+}
+
+// Step 5: Clear Error
+function clearError() {
+  const errorDiv = document.getElementById('error-message');
+
+  if (!errorDiv) return;
+
+  errorDiv.textContent = '';
+  errorDiv.classList.add('hidden');
+  errorDiv.style.display = 'none';
+}
+
+// Export functions for Jest
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { weatherApi, stateNames };
+  module.exports = {
+    fetchWeatherAlerts,
+    displayAlerts,
+    resetInput,
+    showError,
+    clearError
+  };
 }
